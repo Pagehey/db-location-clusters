@@ -1,0 +1,16 @@
+{
+  "name": "db-location-clusters",
+  "private": true,
+  "dependencies": {
+    "@rails/webpacker": "^4.0.2",
+    "bootstrap": "4.2.1",
+    "jquery": "^3.4.1",
+    "popper.js": "^1.15.0",
+    "vue": "^2.6.10",
+    "vue-loader": "^15.7.0",
+    "vue-template-compiler": "^2.6.10"
+  },
+  "devDependencies": {
+    "webpack-dev-server": "^3.4.1"
+  }
+}
