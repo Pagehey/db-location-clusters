@@ -11,7 +11,7 @@ module DbLocationClusters
     config.generators do |generate|
           generate.assets false
           generate.helper false
-          generate.test_framework  :test_unit, fixture: false
+          generate.test_framework  false
         end
     config.i18n.default_locale = :fr
     config.i18n.fallbacks = [:en]
