@@ -1,2 +1,2 @@
-web: bundle exec puma -C config/puma.rb
+web: rails s
 js: bin/webpack-dev-server

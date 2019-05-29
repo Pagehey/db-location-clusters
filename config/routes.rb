@@ -4,4 +4,5 @@ Rails.application.routes.draw do
   get 'vanilla_js', to: 'pages#vanilla_js'
 
   resources :records, only: [:index]
+  get 'clusters', to: 'records#clusters'
 end

@@ -10,10 +10,11 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2019_05_24_124358) do
+ActiveRecord::Schema.define(version: 2019_05_27_135208) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
+  enable_extension "postgis"
 
   create_table "records", force: :cascade do |t|
     t.float "longitude"
@@ -21,6 +22,8 @@ ActiveRecord::Schema.define(version: 2019_05_24_124358) do
     t.string "name"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.geometry "longlat", limit: {:srid=>2154, :type=>"st_point"}
+    t.index ["longlat"], name: "index_records_on_longlat", using: :gist
   end
 
   create_table "users", force: :cascade do |t|

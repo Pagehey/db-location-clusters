@@ -46,6 +46,9 @@ GEM
       activemodel (= 5.2.2.1)
       activesupport (= 5.2.2.1)
       arel (>= 9.0)
+    activerecord-postgis-adapter (5.2.2)
+      activerecord (~> 5.1)
+      rgeo-activerecord (~> 6.0)
     activestorage (5.2.2.1)
       actionpack (= 5.2.2.1)
       activerecord (= 5.2.2.1)
@@ -163,6 +166,10 @@ GEM
     responders (2.4.1)
       actionpack (>= 4.2.0, < 6.0)
       railties (>= 4.2.0, < 6.0)
+    rgeo (2.0.1)
+    rgeo-activerecord (6.2.0)
+      activerecord (>= 5.0)
+      rgeo (>= 1.0.0)
     sassc (2.0.1)
       ffi (~> 1.9)
       rake
@@ -236,6 +243,7 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
+  activerecord-postgis-adapter
   autoprefixer-rails
   blueprinter
   bootsnap

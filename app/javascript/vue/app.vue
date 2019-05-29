@@ -1,57 +1,98 @@
 <template>
   <div id="app">
+    <button @click.prevent="fitToMarkers">Fit to markers</button>
+    <button @click.prevent="displayRecords = !displayRecords">Toggle clusters</button>
+    <span>mapZoom: <strong>{{ mapZoom }} - </strong></span>
+    <span>mapCenter: <strong>{{ mapCenter.lng }}, {{ mapCenter.lat }}</strong> - </span>
+    <span>number of records: <strong>{{ records.length }} - </strong></span>
+    <span>number of clusters: <strong>{{ clusters.length }}</strong></span>
+    <span>clusters radius: <strong>{{ clusterRadius }}</strong>km</span>
     <GmapMap
       ref="gmap"
-      :center="{lat:10, lng:10}"
-      :zoom="7"
-      map-type-id="terrain"
       class="gmaps-div"
+      map-type-id="terrain"
+      :center="center"
+      @zoom_changed="updateClusterRadius"
+      @center_changed="setMapCenter"
     >
       <GmapMarker
-        :key="index"
-        v-for="(m, index) in markers"
-        :position="m.position"
+        v-for="(marker, index) in markers"
+        :key="marker.id"
+        :position="marker.position"
         :clickable="true"
-        :draggable="true"
-        @click="center=m.position"
-      />
-    </GmapMap>
-    <button @click.prevent="fitToMakers">Fit</button>
+        :label="{ text: `${marker.name}` }"
+        @dblclick="center = marker.position"
+      /></GmapMap>
   </div>
 </template>
 
 <script>
 import * as VueGoogleMaps from 'vue2-google-maps'
+import _ from 'lodash'
 import axios from 'axios'
 
 export default {
   data: function () {
     return {
-      markers: [],
-      bounds: null
+      records: [],
+      clusters: [],
+      center: {lat: 0, lng: 0},
+      displayRecords: false,
+      clusterRadius: 10,
+      mapZoom: null,
+      mapCenter: {lat: 0, lng: 0}
     }
   },
   methods: {
-    fitToMakers() {
+    setMapCenter() {
+      this.mapCenter.lat = this.$refs.gmap.$mapObject.getCenter().lat()
+      this.mapCenter.lng = this.$refs.gmap.$mapObject.getCenter().lng()
+    },
+    updateClusterRadius: _.debounce(function(event) { // SHOULD KEEP THIS SYNTAX (VUE INSTANCE NOT AVAILABLE IF NOT)
+      this.mapZoom = event
+      if(event < 7) {
+        this.clusterRadius = 50
+      } else if (event >= 18) {
+        this.displayRecords = true
+      } else if (event >= 13) {
+        this.displayRecords = false
+        this.clusterRadius = 3
+      } else if (event >= 9) {
+        this.displayRecords = false
+        this.clusterRadius = 5
+      } else {
+        this.clusterRadius = 10
+      }
+    }, 500),
+    fitToMarkers() {
       let bounds = new google.maps.LatLngBounds();
       this.markers.forEach( marker => {
-          let myLatLng = new google.maps.LatLng({lat: marker.latitude, lng: marker.longitude });
+        let LatLng = new google.maps.LatLng({lat: marker.position.lat, lng: marker.position.lng });
 
-          bounds.extend(myLatLng);
+        bounds.extend(LatLng);
       })
-
       this.$refs.gmap.fitBounds(bounds);
+    },
+    fetchClusters() {
+      axios.get('/clusters', { params: { km: this.clusterRadius } }).then(response => this.clusters  = response.data)
+    }
+  },
+  computed: {
+    markers() {
+      return this.displayRecords ? this.records : this.clusters
     }
   },
   created() {
-    axios.get(
-      '/records'
-    ).then(response => {
-      this.markers = response.data.records
-    })
+    axios.get('/records').then(response => this.records = response.data.records)
+    this.fetchClusters()
   },
   mounted() {
-    setTimeout(() => this.fitToMakers(), 100)
+    setTimeout(() => this.fitToMarkers(), 100)
+  },
+  watch: {
+    clusterRadius() {
+      this.fetchClusters()
+    }
   }
 }
 </script>
