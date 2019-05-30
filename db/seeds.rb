@@ -34,3 +34,22 @@ n.times do
   print '.'
 end
 print " done! \n"
+
+# print "- Creating records everywhere in France (#{n}) "
+# n.times do
+#   longitude = rand(-0.255000..5.80000)
+#   latitude  = rand(44.17000..49.07000)
+#   point     = "POINT(#{longitude} #{latitude})"
+
+#   Record.create(
+#     name: Faker::Games::Witcher.location,
+#     longitude: longitude,
+#     latitude:  latitude,
+#     longlat:   point
+#   )
+#   print '.'
+# end
+# print " done! \n"
+
+# rand(-0.255000..5.80000)
+# rand(44.17000..49.07000)

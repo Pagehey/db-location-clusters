@@ -53,6 +53,17 @@ FROM records"
 
 
 
+"SELECT row_number() over () AS id,
+  ST_NumGeometries(gc),
+  ST_AsText(gc) AS geom_collection,
+  ST_AsText(ST_Centroid(gc)) AS centroid,
+  ST_AsText(ST_MinimumBoundingCircle(gc)) AS circle,
+  sqrt(ST_Area(ST_MinimumBoundingCircle(gc)) / pi()) AS radius
+FROM (
+  SELECT unnest(ST_ClusterWithin(longlat, 2)) gc
+  FROM records
+  WHERE ST_Contains(ST_MakeEnvelope(0.89, 47.57, -1.17, 46.94, 2154), longlat)
+) f;"
 
 
 

@@ -1,6 +1,7 @@
 class BuildClustersService
-  def initialize(radius)
-    @radius        = radius
+  def initialize(params)
+    @radius        = params[:radius]
+    @bounds        = JSON.parse params[:bounds]
     @ar_connection = ActiveRecord::Base.connection
   end
 
@@ -19,6 +20,7 @@ class BuildClustersService
       FROM (
         SELECT unnest(ST_ClusterWithin(longlat, #{ radius_in_degres })) gc
         FROM records
+        #{"WHERE ST_Contains(ST_MakeEnvelope(#{@bounds.values.map(&:values).join(', ')}, 2154), longlat)" if @bounds.present?}
       ) f;
     EOF
   end

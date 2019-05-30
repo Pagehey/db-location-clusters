@@ -4,16 +4,18 @@
     <button @click.prevent="displayRecords = !displayRecords">Toggle clusters</button>
     <span>mapZoom: <strong>{{ mapZoom }} - </strong></span>
     <span>mapCenter: <strong>{{ mapCenter.lng }}, {{ mapCenter.lat }}</strong> - </span>
-    <span>number of records: <strong>{{ records.length }} - </strong></span>
-    <span>number of clusters: <strong>{{ clusters.length }}</strong></span>
+    <span>nb of records: <strong>{{ records.length }} - </strong></span>
+    <span>nb of clusters: <strong>{{ clusters.length }} - </strong></span>
     <span>clusters radius: <strong>{{ clusterRadius }}</strong>km</span>
     <GmapMap
       ref="gmap"
       class="gmaps-div"
       map-type-id="terrain"
       :center="center"
+      :zoom="5"
       @zoom_changed="updateClusterRadius"
       @center_changed="setMapCenter"
+      @bounds_changed="setBounds"
     >
       <GmapMarker
         v-for="(marker, index) in markers"
@@ -36,33 +38,36 @@ export default {
     return {
       records: [],
       clusters: [],
-      center: {lat: 0, lng: 0},
-      displayRecords: false,
-      clusterRadius: 10,
-      mapZoom: null,
-      mapCenter: {lat: 0, lng: 0}
+      center: {lat: 46.227638, lng: 2.213749},
+      clusterRadius: 25,
+      mapZoom: 5,
+      mapCenter: {lat: 0, lng: 0},
+      mapBounds: {}
     }
   },
   methods: {
+    setBounds: _.debounce(function(event) {
+      const bounds = this.$refs.gmap.$mapObject.getBounds()
+      if(bounds) {
+        this.mapBounds = {
+          nw: {
+            lng: bounds.ga.l + 0.005,
+            lat: bounds.na.l + 0.05
+          },
+          se: {
+            lng: bounds.ga.j - 0.005,
+            lat: bounds.na.j - 0.05
+          }
+        }
+      }
+    }, 1000),
     setMapCenter() {
       this.mapCenter.lat = this.$refs.gmap.$mapObject.getCenter().lat()
       this.mapCenter.lng = this.$refs.gmap.$mapObject.getCenter().lng()
     },
     updateClusterRadius: _.debounce(function(event) { // SHOULD KEEP THIS SYNTAX (VUE INSTANCE NOT AVAILABLE IF NOT)
       this.mapZoom = event
-      if(event < 7) {
-        this.clusterRadius = 50
-      } else if (event >= 18) {
-        this.displayRecords = true
-      } else if (event >= 13) {
-        this.displayRecords = false
-        this.clusterRadius = 3
-      } else if (event >= 9) {
-        this.displayRecords = false
-        this.clusterRadius = 5
-      } else {
-        this.clusterRadius = 10
-      }
+      if (event < 15) this.clusterRadius = 15 - event
     }, 500),
     fitToMarkers() {
       let bounds = new google.maps.LatLngBounds();
@@ -74,23 +79,41 @@ export default {
       this.$refs.gmap.fitBounds(bounds);
     },
     fetchClusters() {
-      axios.get('/clusters', { params: { km: this.clusterRadius } }).then(response => this.clusters  = response.data)
+      axios.get(
+        '/clusters',
+        { params: {
+            radius: this.clusterRadius,
+            bounds: this.mapBounds
+          }
+        }).then(response =>  this.clusters  = response.data)
+    },
+    fetchRecords() {
+      axios.get(
+        '/records',
+        {
+          params: {
+            bounds: this.mapBounds
+          }
+        }).then(response => this.records = response.data.records)
     }
   },
   computed: {
     markers() {
       return this.displayRecords ? this.records : this.clusters
+    },
+    displayRecords() {
+      return this.mapZoom >= 15
     }
   },
-  created() {
-    axios.get('/records').then(response => this.records = response.data.records)
-    this.fetchClusters()
-  },
   mounted() {
-    setTimeout(() => this.fitToMarkers(), 100)
+    setTimeout(() => {
+      this.fetchRecords()
+      this.fetchClusters()
+    }, 500)
   },
   watch: {
-    clusterRadius() {
+    mapBounds() {
+      this.fetchRecords()
       this.fetchClusters()
     }
   }
@@ -99,7 +122,7 @@ export default {
 
 <style scoped>
 .gmaps-div {
-  height: 600px;
   width: 100%;
+  height: calc(100vh - 100px);
 }
 </style>
