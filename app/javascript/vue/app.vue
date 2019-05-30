@@ -1,20 +1,18 @@
 <template>
   <div id="app">
     <button @click.prevent="fitToMarkers">Fit to markers</button>
-    <button @click.prevent="displayRecords = !displayRecords">Toggle clusters</button>
     <span>mapZoom: <strong>{{ mapZoom }} - </strong></span>
-    <span>mapCenter: <strong>{{ mapCenter.lng }}, {{ mapCenter.lat }}</strong> - </span>
     <span>nb of records: <strong>{{ records.length }} - </strong></span>
     <span>nb of clusters: <strong>{{ clusters.length }} - </strong></span>
-    <span>clusters radius: <strong>{{ clusterRadius }}</strong>km</span>
+    <span>clusters radius: <strong>{{ clusterRadius }} - </strong>km</span>
+    <input v-model="clusterRadius" @change="fetchRecords" type="number">
     <GmapMap
       ref="gmap"
       class="gmaps-div"
       map-type-id="terrain"
       :center="center"
-      :zoom="5"
+      :zoom="7"
       @zoom_changed="updateClusterRadius"
-      @center_changed="setMapCenter"
       @bounds_changed="setBounds"
     >
       <GmapMarker
@@ -39,9 +37,8 @@ export default {
       records: [],
       clusters: [],
       center: {lat: 46.227638, lng: 2.213749},
-      clusterRadius: 25,
+      clusterRadius: 20,
       mapZoom: 5,
-      mapCenter: {lat: 0, lng: 0},
       mapBounds: {}
     }
   },
@@ -61,40 +58,22 @@ export default {
         }
       }
     }, 1000),
-    setMapCenter() {
-      this.mapCenter.lat = this.$refs.gmap.$mapObject.getCenter().lat()
-      this.mapCenter.lng = this.$refs.gmap.$mapObject.getCenter().lng()
-    },
     updateClusterRadius: _.debounce(function(event) { // SHOULD KEEP THIS SYNTAX (VUE INSTANCE NOT AVAILABLE IF NOT)
       this.mapZoom = event
       if (event < 15) this.clusterRadius = 15 - event
     }, 500),
-    fitToMarkers() {
-      let bounds = new google.maps.LatLngBounds();
-      this.markers.forEach( marker => {
-        let LatLng = new google.maps.LatLng({lat: marker.position.lat, lng: marker.position.lng });
-
-        bounds.extend(LatLng);
-      })
-      this.$refs.gmap.fitBounds(bounds);
-    },
-    fetchClusters() {
-      axios.get(
-        '/clusters',
-        { params: {
-            radius: this.clusterRadius,
-            bounds: this.mapBounds
-          }
-        }).then(response =>  this.clusters  = response.data)
-    },
     fetchRecords() {
       axios.get(
         '/records',
         {
           params: {
+            radius: this.clusterRadius,
             bounds: this.mapBounds
           }
-        }).then(response => this.records = response.data.records)
+        }).then(response => {
+          this.records = response.data.records
+          this.clusters  = response.data.clusters
+        })
     }
   },
   computed: {
@@ -106,15 +85,11 @@ export default {
     }
   },
   mounted() {
-    setTimeout(() => {
-      this.fetchRecords()
-      this.fetchClusters()
-    }, 500)
+    setTimeout(() => this.fetchRecords(), 500)
   },
   watch: {
     mapBounds() {
       this.fetchRecords()
-      this.fetchClusters()
     }
   }
 }
