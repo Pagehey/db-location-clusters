@@ -8,12 +8,9 @@ class RecordsController < ApplicationController
       records = Record.all
     end
 
-    render json: RecordSerializer.render(records, root: :records)
-  end
-
-  def clusters
-    clusters = BuildClustersService.new(params).call
-
-    render json: clusters
+    render json: {
+      records:   RecordSerializer.render_as_hash(records),
+      clusters:  BuildClustersService.new(params).call
+    }
   end
 end
