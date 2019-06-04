@@ -37,9 +37,18 @@ Record.destroy_all
 
 (0..5).each do |lng|
   (43..48).each do |lat|
-    20.times do
+    25.times do
       longitude = lng + rand(0.5..0.70000)
       latitude  = lat + rand(0.5..0.70000)
+      point     = "POINT(#{longitude} #{latitude})"
+      Record.create(
+        name: Faker::Movies::StarWars.planet,
+        longitude: longitude,
+        latitude:  latitude,
+        longlat:   point
+      )
+      longitude = lng + rand(0.00..0.50) + rand(0.5..0.70000)
+      latitude  = lat + rand(0.50..1.00) + rand(0.5..0.70000)
       point     = "POINT(#{longitude} #{latitude})"
       Record.create(
         name: Faker::Movies::StarWars.planet,

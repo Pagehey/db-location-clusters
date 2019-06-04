@@ -11,7 +11,7 @@
       class="gmaps-div"
       map-type-id="terrain"
       :center="center"
-      :zoom="7"
+      :zoom="mapZoom"
       @zoom_changed="updateClusterRadius"
       @bounds_changed="setBounds"
     >
@@ -37,7 +37,7 @@ export default {
       records: [],
       clusters: [],
       center: {lat: 46.227638, lng: 2.213749},
-      clusterRadius: 20,
+      clusterRadius: 25,
       mapZoom: 5,
       mapBounds: {}
     }
@@ -48,19 +48,25 @@ export default {
       if(bounds) {
         this.mapBounds = {
           nw: {
-            lng: bounds.ga.l + 0.005,
-            lat: bounds.na.l + 0.05
+            lng: bounds.ga.l,
+            lat: bounds.na.l
           },
           se: {
-            lng: bounds.ga.j - 0.005,
-            lat: bounds.na.j - 0.05
+            lng: bounds.ga.j,
+            lat: bounds.na.j
           }
         }
       }
     }, 1000),
     updateClusterRadius: _.debounce(function(event) { // SHOULD KEEP THIS SYNTAX (VUE INSTANCE NOT AVAILABLE IF NOT)
       this.mapZoom = event
-      if (event < 15) this.clusterRadius = 15 - event
+      // if (event < 9) {
+      //   this.clusterRadius = 25
+      // } else if (event < 15) {
+      //   this.clusterRadius = 15 - event
+      // }
+      // this.clusterRadius =  - (245 / 150) * event + (199 / 6) // 5:25/20:0.5
+      this.clusterRadius =  (- 1.9 * event + 34.5) // 5:25.18:0.3
     }, 500),
     fetchRecords() {
       axios.get(
@@ -81,7 +87,8 @@ export default {
       return this.displayRecords ? this.records : this.clusters
     },
     displayRecords() {
-      return this.mapZoom >= 15
+      // return this.mapZoom >= 15
+      return false
     }
   },
   mounted() {
