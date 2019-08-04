@@ -77,8 +77,8 @@ export default {
             bounds: this.mapBounds
           }
         }).then(response => {
-          this.records = response.data.records
-          this.clusters  = response.data.clusters
+          this.records  = response.data.records
+          this.clusters = response.data.clusters
         })
     }
   },

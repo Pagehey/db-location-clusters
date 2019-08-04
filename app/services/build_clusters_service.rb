@@ -18,7 +18,7 @@ class BuildClustersService
         ST_NumGeometries(gc) AS nb_of_records,
         ST_AsText(ST_Centroid(gc)) AS center_coords
       FROM (
-        SELECT unnest(ST_ClusterWithin(longlat, #{ radius_in_degres })) gc
+        SELECT unnest(ST_ClusterWithin(longlat, #{radius_in_degres})) gc
         FROM records
         #{"WHERE ST_Contains(ST_MakeEnvelope(#{@bounds.values.map(&:values).join(', ')}, 2154), longlat)" if @bounds.present?}
       ) f;
