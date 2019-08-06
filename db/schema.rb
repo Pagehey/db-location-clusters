@@ -19,11 +19,11 @@ ActiveRecord::Schema.define(version: 2019_05_27_135208) do
   create_table "records", force: :cascade do |t|
     t.float "longitude"
     t.float "latitude"
-    t.string "name"
+    t.string "reference"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.geometry "longlat", limit: {:srid=>2154, :type=>"st_point"}
-    t.index ["longlat"], name: "index_records_on_longlat", using: :gist
+    t.geometry "lonlat", limit: {:srid=>2154, :type=>"st_point"}
+    t.index ["lonlat"], name: "index_records_on_lonlat", using: :gist
   end
 
   create_table "users", force: :cascade do |t|

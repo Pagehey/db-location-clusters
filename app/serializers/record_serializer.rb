@@ -1,7 +1,7 @@
 class RecordSerializer < Blueprinter::Base
   identifier :id
 
-  field :name
+  field :reference
 
   field :longitude
 

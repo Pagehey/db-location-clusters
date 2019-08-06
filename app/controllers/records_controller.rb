@@ -1,16 +1,11 @@
 class RecordsController < ApplicationController
   def index
-    bounds  = JSON.parse(params[:bounds])
-    if bounds.present?
-      bounds  = bounds.values.map(&:values).join(', ')
-      records = Record.where("ST_Contains(ST_MakeEnvelope(#{bounds}, 2154), longlat)")
-    else
-      records = Record.all
-    end
+    raise 'NO BOUNDS, FOOL!' unless params[:bounds].present?
 
-    render json: {
-      records:   RecordSerializer.render_as_hash(records),
-      clusters:  BuildClustersService.new(params).call
-    }
+    bounds  = JSON.parse(params[:bounds])
+    bounds  = bounds.values.map(&:values).join(', ')
+    records = Record.where("ST_Contains(ST_MakeEnvelope(#{bounds}, 2154), lonlat)")
+
+    render json: { records:   RecordSerializer.render_as_hash(records), }
   end
 end
