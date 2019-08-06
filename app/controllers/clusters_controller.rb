@@ -1,5 +1,8 @@
 class ClustersController < ApplicationController
   def index
-    render json: { clusters:  BuildClustersService.new(params).call }
+    bounds = JSON.parse(params[:bounds])
+
+    render json: { clusters: BuildClustersService.new(bounds).call }
+    # render json: { clusters: BuildClustersServiceBis.new(bounds).call }
   end
 end

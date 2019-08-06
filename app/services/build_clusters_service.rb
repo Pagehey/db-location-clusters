@@ -1,49 +1,53 @@
 class BuildClustersService
-  def initialize(params)
-    @radius        = params[:radius]
-    @bounds        = JSON.parse params[:bounds] if params[:bounds].present?
+  def initialize(bounds)
     @ar_connection = ActiveRecord::Base.connection
+    @bounds        = bounds
   end
 
   def call
-    @clusters_from_db = @ar_connection.execute query
-    render_as_hash
+    @clusters_from_db = @ar_connection.execute(query)
+
+    clusters_as_hash
   end
 
   private
 
   def query
-    <<~EOF
+    <<~QUERY
       SELECT
-        row_number() over () AS id,
-        array_agg(id) AS ids,
-        COUNT( lonlat ) AS nb_of_records,
+        ROW_NUMBER() OVER () AS id,
+        ARRAY_AGG(id) AS record_ids,
+        COUNT( lonlat ) AS number_of_records,
         ST_AsText( ST_Centroid(ST_Collect( lonlat )) ) AS center_coords
       FROM records
-      #{"WHERE ST_Contains(ST_MakeEnvelope(#{@bounds.values.map(&:values).join(', ')}, 2154), lonlat)" if @bounds.present?}
+      WHERE ST_Contains(ST_MakeEnvelope(#{map_bounds}, 2154), lonlat)
       GROUP BY
-          ST_SnapToGrid( ST_SetSRID(lonlat, 2154), #{radius_in_degres})
+          ST_SnapToGrid( ST_SetSRID(lonlat, 2154), #{cluster_radius})
       ORDER BY
-          nb_of_records DESC
-      ;
-    EOF
+          number_of_records DESC
+    QUERY
   end
 
-  def radius_in_degres # permets de convertir une valeur en kilomètres en degré d'angle pour la query PostGIS (1def =~ 111,139km )
-    (@bounds['nw']['lng'] - @bounds['se']['lng']).fdiv(6).round(3)
+  def map_bounds
+    @bounds.values.map(&:values).join(', ') # @bounds is a hash of hashes
   end
 
-  def render_as_hash
+  def cluster_radius
+    map_with_in_degrees = @bounds['nw']['lng'] - @bounds['se']['lng'] # north west longitude - south east longitude
+
+    map_with_in_degrees.fdiv(4).round(3) # cluster radius is 1/4 of displayed map
+  end
+
+  def clusters_as_hash
     @clusters_from_db.map do |cluster|
-      center_coords = cluster['center_coords'].tr('POINT()', '').split
+      center_coords = RGeo::Geos.factory.parse_wkt(cluster['center_coords']).coordinates
+      record_ids    = cluster['record_ids'].tr('{},', ' ').split.map(&:to_i).first 3
+
       {
-        id:     cluster['id'],
-        ids: cluster['ids'],
-        reference:   cluster['nb_of_records'],
-        position: {
-          lng: center_coords[0].to_f,
-          lat: center_coords[1].to_f
-        }
+        id:        cluster['id'],                # id of cluster based on row number
+        ids:       record_ids,                   # ids of the clustered records (current format is String: "{123, 1414, 313, ...}")
+        reference: cluster['number_of_records'], # is named 'reference' to match record objects for gmaps vue component
+        position:  { lng: center_coords[0], lat: center_coords[1] } # fits gmaps API syntax
       }
     end
   end
