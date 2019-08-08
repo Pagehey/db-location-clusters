@@ -11,7 +11,7 @@ class BuildClustersServiceBis
   private
 
   def clusters
-    Record.select( # it's not records though ...
+    Record.select( # they are not records though ...
       'row_number() over () AS id,
         array_agg(id) AS record_ids,
         COUNT( lonlat ) AS number_of_records,

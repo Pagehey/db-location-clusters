@@ -1,23 +1,26 @@
 <template>
   <div id="app">
-    <button @click.prevent="fitToMarkers">Fit to markers</button>
     <span>mapZoom: <strong>{{ mapZoom }} - </strong></span>
     <span>nb of records: <strong>{{ numberOfRecords }} - </strong></span>
     <span>nb of clusters: <strong>{{ clusters.length }} - </strong></span>
     <span>clusters radius: <strong>{{ clusterRadiusInKm }} - </strong>km</span>
     <input v-model="clusterRadiusInKm" @change="fetchClusters" type="number" step="0.1">
     <button @click="fetchRecords">fetch Records</button>
+
+
+
+
     <GmapMap
       ref="gmap"
       class="gmaps-div"
       map-type-id="terrain"
-      :center="center"
+      :center="{ lat: 46.227638, lng: 2.213749 }"
       :zoom="mapZoom"
       @zoom_changed="mapZoom = $event"
       @bounds_changed="setBounds"
     >
       <GmapMarker
-        v-for="(marker, index) in markers"
+        v-for="(marker) in markers"
         :key="marker.id"
         :position="marker.position"
         :clickable="true"
@@ -25,6 +28,11 @@
         @dblclick="center = marker.position"
       />
     </GmapMap>
+
+
+
+
+
   </div>
 </template>
 
@@ -36,16 +44,16 @@ import axios from 'axios'
 export default {
   data() {
     return {
-      records:         [],
-      clusters:        [],
-      center:          { lat: 46.227638, lng: 2.213749 },
-      mapZoom:         6,
-      mapBounds:       {},
+      records:   [],
+      clusters:  [],
+      mapZoom:   6,
+      mapBounds: {},
     }
   },
   methods: {
     setBounds: _.debounce(function(event) {
       const bounds = this.$refs.gmap.$mapObject.getBounds()
+
       if(bounds) {
         this.mapBounds = {
           nw: { lng: bounds.ga.l, lat: bounds.na.l },
@@ -64,21 +72,23 @@ export default {
     displayRecords() {
       if(this.clusters.length > 0) return _.max(_.map(this.clusters, 'reference')) <= 3
     },
+    markers() {
+      return this.displayRecords ? this.records : this.clusters
+    },
+    // ONLY FOR INFORMATION, NOT NEEDED TO MAKE THE QUERY WORKS ################
     numberOfRecords() {
       return _.sumBy(this.clusters, 'reference')
     },
-    clusterRadiusInKm() { // ONLY FOR INFORMATION, NOT NEEDED TO MAKE THE QUERY WORKS
+    clusterRadiusInKm() {
       if (this.mapBounds.nw) {
         const radialLatitude = (this.mapBounds.nw.lat) * Math.PI / 180
 
         return ((this.mapBounds.nw.lng - this.mapBounds.se.lng) * 111.320 * Math.cos(radialLatitude) / 4)
       }
     },
-    markers() {
-      return this.displayRecords ? this.records : this.clusters
-    }
+    // #########################################################################
   },
-  watch: {
+  watch: { // FETCH THE CLUSTERS EACH TIME THE BOUNDS CHANGE (zoom and move the map)
     mapBounds() {
       this.fetchClusters()
     }
