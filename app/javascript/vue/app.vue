@@ -1,22 +1,19 @@
 <template>
   <div id="app">
-    <span>mapZoom: <strong>{{ mapZoom }} - </strong></span>
-    <span>nb of records: <strong>{{ numberOfRecords }} - </strong></span>
-    <span>nb of clusters: <strong>{{ clusters.length }} - </strong></span>
-    <span>clusters radius: <strong>{{ clusterRadiusInKm }} - </strong>km</span>
-    <input v-model="clusterRadiusInKm" @change="fetchClusters" type="number" step="0.1">
-    <button @click="fetchRecords">fetch Records</button>
-
-
-
+    <div class="m-3">
+      <span class="mx-2">zoom: <strong>{{ zoom }}</strong></span>
+      <span class="mx-2">number of records: <strong>{{ numberOfRecords }}</strong></span>
+      <span class="mx-2">number of clusters: <strong>{{ clusters.length }}</strong></span>
+      <span class="mx-2">clusters size: <strong>{{ clusterSizeInKm || 0 }}</strong> <i>km</i></span>
+    </div>
 
     <GmapMap
       ref="gmap"
       class="gmaps-div"
       map-type-id="terrain"
-      :center="{ lat: 46.227638, lng: 2.213749 }"
-      :zoom="mapZoom"
-      @zoom_changed="mapZoom = $event"
+      :center="center"
+      :zoom="zoom"
+      @zoom_changed="zoom = $event"
       @bounds_changed="setBounds"
     >
       <GmapMarker
@@ -24,73 +21,67 @@
         :key="marker.id"
         :position="marker.position"
         :clickable="true"
-        :label="{ text: `${marker.reference}` }"
+        :label="{ text: `${marker.reference || marker.number_of_records}` }"
+        :icon="'http://icons.iconarchive.com/icons/custom-icon-design/flatastic-6/72/Circle-icon.png'"
         @dblclick="center = marker.position"
       />
     </GmapMap>
-
-
-
-
 
   </div>
 </template>
 
 <script>
 import * as VueGoogleMaps from 'vue2-google-maps'
-import _ from 'lodash'
-import axios from 'axios'
+import _                  from 'lodash'
+import axios              from 'axios'
 
 export default {
   data() {
     return {
       records:   [],
       clusters:  [],
-      mapZoom:   6,
+      center:    { lat: 46.227638, lng: 2.213749 },
       mapBounds: {},
+      zoom:      6
     }
   },
   methods: {
     setBounds: _.debounce(function(event) {
-      const bounds = this.$refs.gmap.$mapObject.getBounds()
-
-      if(bounds) {
-        this.mapBounds = {
-          nw: { lng: bounds.ga.l, lat: bounds.na.l },
-          se: { lng: bounds.ga.j, lat: bounds.na.j }
-        }
+      this.mapBounds = {
+        nw: { lng: event.ga.l, lat: event.na.l },
+        se: { lng: event.ga.j, lat: event.na.j }
       }
     }, 500),
     fetchRecords() {
-      axios.get('/records', {params: {bounds: this.mapBounds}}).then(response => this.records = response.data.records)
+      return axios.get('/records', {params: {bounds: this.mapBounds}}).then(response => this.records = response.data.records)
     },
     fetchClusters() {
-      axios.get('/clusters', {params: {bounds: this.mapBounds}}).then(response => this.clusters = response.data.clusters)
+      return axios.get('/clusters', {params: {bounds: this.mapBounds}}).then(response => this.clusters = response.data.clusters)
     }
   },
   computed: {
     displayRecords() {
-      if(this.clusters.length > 0) return _.max(_.map(this.clusters, 'reference')) <= 3
+      return _.max(_.map(this.clusters, 'number_of_records')) <= 3
     },
     markers() {
       return this.displayRecords ? this.records : this.clusters
     },
     // ONLY FOR INFORMATION, NOT NEEDED TO MAKE THE QUERY WORKS ################
     numberOfRecords() {
-      return _.sumBy(this.clusters, 'reference')
+      return _.sumBy(this.clusters, 'number_of_records')
     },
-    clusterRadiusInKm() {
+    clusterSizeInKm() {
       if (this.mapBounds.nw) {
         const radialLatitude = (this.mapBounds.nw.lat) * Math.PI / 180
 
-        return ((this.mapBounds.nw.lng - this.mapBounds.se.lng) * 111.320 * Math.cos(radialLatitude) / 4)
+        return ((this.mapBounds.nw.lng - this.mapBounds.se.lng) * 111.320 * Math.cos(radialLatitude) / 6).toFixed(3)
       }
     },
     // #########################################################################
   },
-  watch: { // FETCH THE CLUSTERS EACH TIME THE BOUNDS CHANGE (zoom and move the map)
-    mapBounds() {
-      this.fetchClusters()
+  watch: {
+    mapBounds() { // FETCH THE CLUSTERS EACH TIME THE BOUNDS CHANGE (zoom and move the map) and records if needed
+      this.fetchClusters().then(() => { if(this.displayRecords) this.fetchRecords() })
     }
   }
 }

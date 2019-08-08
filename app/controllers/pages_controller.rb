@@ -1,4 +1,4 @@
 class PagesController < ApplicationController
-  def with_vue
+  def home
   end
 end

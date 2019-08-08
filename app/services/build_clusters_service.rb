@@ -22,7 +22,7 @@ class BuildClustersService
       FROM records
       WHERE ST_Contains(ST_MakeEnvelope(#{map_bounds}, 2154), lonlat)
       GROUP BY
-          ST_SnapToGrid( ST_SetSRID(lonlat, 2154), #{cluster_radius})
+          ST_SnapToGrid( ST_SetSRID(lonlat, 2154), #{cluster_size})
       ORDER BY
           number_of_records DESC
     QUERY
@@ -32,22 +32,22 @@ class BuildClustersService
     @bounds.values.map(&:values).join(', ') # @bounds is a hash of hashes
   end
 
-  def cluster_radius
+  def cluster_size
     map_with_in_degrees = @bounds['nw']['lng'] - @bounds['se']['lng'] # north west longitude - south east longitude
 
-    map_with_in_degrees.fdiv(4).round(3) # cluster radius is 1/4 of displayed map
+    map_with_in_degrees.fdiv(6).round(3) # cluster radius is 1/4 of displayed map
   end
 
   def clusters_as_hash
     @clusters_from_db.map do |cluster|
       center_coords = RGeo::Geos.factory.parse_wkt(cluster['center_coords']).coordinates
-      record_ids    = cluster['record_ids'].tr('{},', ' ').split.map(&:to_i).first 3
+      record_ids    = cluster['record_ids'].tr('{},', ' ').split.map(&:to_i) # original = "{123, 1414, 313, ...}"
 
       {
-        id:        cluster['id'],                # id of cluster based on row number
-        ids:       record_ids,                   # ids of the clustered records (current format is String: "{123, 1414, 313, ...}")
-        reference: cluster['number_of_records'], # is named 'reference' to match record objects for gmaps vue component
-        position:  { lng: center_coords[0], lat: center_coords[1] } # fits gmaps API syntax
+        id:                cluster['id'], # id of cluster based on row number
+        ids:               record_ids,    # ids of the clustered records
+        number_of_records: cluster['number_of_records'],
+        position:          { lng: center_coords[0], lat: center_coords[1] } # fits gmaps API syntax
       }
     end
   end

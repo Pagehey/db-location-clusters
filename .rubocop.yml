@@ -41,3 +41,21 @@ Style/EmptyMethod:
   Enabled: false
 Bundler/OrderedGems:
   Enabled: false
+Style/TrailingCommaInHashLiteral:
+  Enabled: false
+Layout/AlignHash:
+  EnforcedHashRocketStyle: table
+  EnforcedColonStyle: table
+Layout/DotPosition:
+  EnforcedStyle: trailing
+Layout/SpaceInLambdaLiteral:
+  EnforcedStyle: require_space
+Style/Lambda:
+  EnforcedStyle: literal
+Style/SymbolArray:
+  EnforcedStyle: brackets
+Layout/MultilineMethodCallIndentation:
+  EnforcedStyle: indented_relative_to_receiver
+Metrics/BlockLength:
+  Exclude:
+    - 'spec/**/*'

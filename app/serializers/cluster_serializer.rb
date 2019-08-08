@@ -1,10 +1,6 @@
 class ClusterSerializer < Blueprinter::Base
   identifier :id
 
-  field :reference do |record, _option|
-    record.number_of_records
-  end
-
   field :number_of_records
 
   field :record_ids

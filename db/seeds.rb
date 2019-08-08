@@ -1,13 +1,7 @@
 require 'csv'
 
 puts "- Cleaning DB"
-# Record.destroy_all
-
-puts "- Creating records from csv..."
-CSV.foreach( File.dirname(__FILE__) + '/fixtures/markers.csv', headers: :first_row, header_converters: :symbol) do |row|
-   Record.create!(row.to_h)
-   print '.'
-end
+Record.destroy_all
 
 puts "- Creating records from csv..."
 CSV.foreach( File.dirname(__FILE__) + '/fixtures/markers.csv', headers: :first_row, header_converters: :symbol) do |row|
